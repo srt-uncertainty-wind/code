@@ -104,7 +104,7 @@ def dataConstruct(work_folder_path, work_mat_name, variable_list, normalized = F
 
     wshr_class_idx = [np.where(Y == 0)[0], np.where(Y == 1)[0]]
     # print(X.shape, Y.shape)
-    print(f"Wind Shear Warns at time {wshr_class_idx[0]}")
+    # print(f"Wind Shear Warns at time {wshr_class_idx[0]}")
     return X, Y
 
 def ALTRmetrics(folder_name, mat_name, normalized=False):
@@ -135,7 +135,7 @@ def ALTRmetrics(folder_name, mat_name, normalized=False):
     ALTR_overlimit = [ALTR_residual[i] if abs(ALTR_residual[i])>500 and i not in ALT_stable_time else None for i in range(len(ALTR_residual))]
     ALTR_IC_idx_list = np.where(np.array(ALTR_overlimit) == None)[0]
     ALTR_OOC_idx_list = np.where(np.array(ALTR_overlimit) != None)[0]
-    print(f"Altitute varying rate out of control at time: {ALTR_OOC_idx_list}")
+    # print(f"Altitute varying rate out of control at time: {ALTR_OOC_idx_list}")
 
     return ALTR_OOC_idx_list
 
@@ -147,7 +147,7 @@ def PTCHmetrics(folder_name, mat_name, normalized=False):
     # 打印俯仰姿态绝对值超过5度的时刻
     PTCH_IC_idx_list = np.where(np.abs(X[:, 0]) <= 5)[0]
     PTCH_OOC_idx_list = np.where(np.abs(X[:, 0]) > 5)[0]
-    print(f"Pitch angle out of control at time {PTCH_OOC_idx_list}")
+    # print(f"Pitch angle out of control at time {PTCH_OOC_idx_list}")
 
     return PTCH_OOC_idx_list
 
@@ -161,103 +161,103 @@ def crossValidate(folder_name, mat_name, variable_list, normalized=False):
     # 获取两判据OOC的交集
     cross_OOC_idx_list = np.sort(list(set(ALTR_OOC_idx_list) & set(PTCH_OOC_idx_list)))
     cross_IC_idx_list = [time for time in range(len(Y)) if time not in cross_OOC_idx_list]
-    print(f'Possible WSHR time: {cross_OOC_idx_list}')
+    # print(f'Possible WSHR time: {cross_OOC_idx_list}')
 
     # 裁取交叉判定可能存在异常的(ALTR, PTCH)的数据集
-    X_cross = X[cross_OOC_idx_list, :2]
-    X_cross_scaled = StandardScaler().fit_transform(X_cross)
+    if len(cross_OOC_idx_list) > 0:
+        X_cross = X[cross_OOC_idx_list, :2]
+        X_cross_scaled = StandardScaler().fit_transform(X_cross)
 
-    # # 对于crossing的(ALTR, PTCH)进行K-means++聚类
-    # kmeans =  KMeans(n_clusters=6, random_state=42)
-    # kmeans.fit(X_cross)
-    # kmeans_centers = kmeans.cluster_centers_
-    # kmeans_labels = kmeans.labels_
+        # # 对于crossing的(ALTR, PTCH)进行K-means++聚类
+        # kmeans =  KMeans(n_clusters=6, random_state=42)
+        # kmeans.fit(X_cross)
+        # kmeans_centers = kmeans.cluster_centers_
+        # kmeans_labels = kmeans.labels_
 
-    # 对于crossing的(ALTR, PTCH)进行DBSCAN聚类
-    db = DBSCAN(eps=0.3, min_samples=2).fit(X_cross_scaled)
-    core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-    core_samples_mask[db.core_sample_indices_] = True
-    db_labels = db.labels_
-    # print(db_labels)
-    for i in np.unique(db_labels):
-        print(f'Cluster {i}: {np.where(X[:, :2] == X_cross[db_labels == i])}')
+        # # 对于crossing的(ALTR, PTCH)进行DBSCAN聚类
+        # db = DBSCAN(eps=0.3, min_samples=2).fit(X_cross_scaled)
+        # core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
+        # core_samples_mask[db.core_sample_indices_] = True
+        # db_labels = db.labels_
+        # # print(db_labels)
+        # # for i in np.unique(db_labels):
+        # #     print(f'Cluster {i}: {np.where(X[:, :2] == X_cross[db_labels == i])}')
 
-    # 绘制甘特图
-    fig, ax = plt.subplots(figsize=(20, 5))
-    ax.broken_barh([(time, 1) for time in ALTR_OOC_idx_list], (0-0.4, 0.8), label='ALTR out of control')
-    ax.broken_barh([(time, 1) for time in PTCH_OOC_idx_list], (1-0.4, 0.8), label='PTCH out of control')
-    ax.broken_barh([(time, 1) for time in cross_OOC_idx_list], (2-0.4, 0.8), facecolors = 'orange', label='Crossing OOC time')
-    ax.broken_barh([(time, 1) for time in wshr_class_idx[0]], (3-0.4, 0.8), facecolors = 'red', label='Given WSHR time')
-    ax.set_yticks(range(4))
-    ax.set_yticklabels(['ALTR OOC', "PTCH OOC", 'Crossing OOC', 'Given WSHR'])
-    plt.xlabel('time (s)')
-    plt.show()
+        # # 绘制甘特图
+        # fig, ax = plt.subplots(figsize=(20, 5))
+        # ax.broken_barh([(time, 1) for time in ALTR_OOC_idx_list], (0-0.4, 0.8), label='ALTR out of control')
+        # ax.broken_barh([(time, 1) for time in PTCH_OOC_idx_list], (1-0.4, 0.8), label='PTCH out of control')
+        # ax.broken_barh([(time, 1) for time in cross_OOC_idx_list], (2-0.4, 0.8), facecolors = 'orange', label='Crossing OOC time')
+        # ax.broken_barh([(time, 1) for time in wshr_class_idx[0]], (3-0.4, 0.8), facecolors = 'red', label='Given WSHR time')
+        # ax.set_yticks(range(4))
+        # ax.set_yticklabels(['ALTR OOC', "PTCH OOC", 'Crossing OOC', 'Given WSHR'])
+        # plt.xlabel('time (s)')
+        # plt.show()
 
-    # # 绘制ALTR和PTCH的散点图及kmneas聚类椭圆形式图
-    # for i in range(2):
-    #     plt.figure()
-    #     if i == 0:
-    #         plt.scatter(X[cross_IC_idx_list, 0], X[cross_IC_idx_list, 1], c='green', s = 10, label='Crossing IC')
-    #     plt.scatter(X[cross_OOC_idx_list, 0], X[cross_OOC_idx_list, 1], c='orange', s = 10, label='Crossing OOC')
-    #     plt.scatter(X[wshr_class_idx[0], 0], X[wshr_class_idx[0], 1], c='red', s = 10, label='WSHR = 0')
-    #     for i in range(len(kmeans_centers)):
-    #         covariances = np.cov(X_cross[kmeans_labels == i].T)
-    #         eigenvalues, eigenvectors = np.linalg.eigh(covariances)
-    #         angle = np.degrees(np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0]))
-    #         width, height = 3 * np.sqrt(eigenvalues)
-    #         ell = Ellipse(xy=kmeans_centers[i], width=width, height=height, angle=angle, edgecolor='blue', lw=2, facecolor='none')
-    #         plt.gca().add_patch(ell)
-    #     plt.xlabel(variable_list[0])
-    #     plt.ylabel(variable_list[1])
-    #     if i == 0:
-    #         plt.title('Crossing in-control & out-of-control points w.r.t (ALTR, PTCH)')
-    #     else:
-    #         plt.title('Crossing out-of-control points w.r.t (ALTR, PTCH)')
-    #     plt.legend()
-    #     plt.show()
+        # # # 绘制ALTR和PTCH的散点图及kmneas聚类椭圆形式图
+        # # for i in range(2):
+        # #     plt.figure()
+        # #     if i == 0:
+        # #         plt.scatter(X[cross_IC_idx_list, 0], X[cross_IC_idx_list, 1], c='green', s = 10, label='Crossing IC')
+        # #     plt.scatter(X[cross_OOC_idx_list, 0], X[cross_OOC_idx_list, 1], c='orange', s = 10, label='Crossing OOC')
+        # #     plt.scatter(X[wshr_class_idx[0], 0], X[wshr_class_idx[0], 1], c='red', s = 10, label='WSHR = 0')
+        # #     for i in range(len(kmeans_centers)):
+        # #         covariances = np.cov(X_cross[kmeans_labels == i].T)
+        # #         eigenvalues, eigenvectors = np.linalg.eigh(covariances)
+        # #         angle = np.degrees(np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0]))
+        # #         width, height = 3 * np.sqrt(eigenvalues)
+        # #         ell = Ellipse(xy=kmeans_centers[i], width=width, height=height, angle=angle, edgecolor='blue', lw=2, facecolor='none')
+        # #         plt.gca().add_patch(ell)
+        # #     plt.xlabel(variable_list[0])
+        # #     plt.ylabel(variable_list[1])
+        # #     if i == 0:
+        # #         plt.title('Crossing in-control & out-of-control points w.r.t (ALTR, PTCH)')
+        # #     else:
+        # #         plt.title('Crossing out-of-control points w.r.t (ALTR, PTCH)')
+        # #     plt.legend()
+        # #     plt.show()
 
-    # 绘制ALTR和PTCH的散点图及DBSCAN聚类椭圆形式图
-    for i in range(2):
-        plt.figure()
-        if i == 0:
-            plt.scatter(X[cross_IC_idx_list, 0], X[cross_IC_idx_list, 1], c='green', s = 10, label='Crossing IC')
-        plt.scatter(X[cross_OOC_idx_list, 0], X[cross_OOC_idx_list, 1], c='orange', s = 10, label='Crossing OOC')
-        plt.scatter(X[wshr_class_idx[0], 0], X[wshr_class_idx[0], 1], c='red', s = 10, label='WSHR = 0')
-        for i in range(len(np.unique(db_labels))):
-            covariances = np.cov(X_cross[db_labels == i].T)
-            eigenvalues, eigenvectors = np.linalg.eigh(covariances)
-            angle = np.degrees(np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0]))
-            width, height = 3 * np.sqrt(eigenvalues)
-            ell = Ellipse(xy=np.mean(X_cross[db_labels == i], axis=0), width=width, height=height, angle=angle, edgecolor='blue', lw=2, facecolor='none')
-            plt.gca().add_patch(ell)
-        plt.xlabel(variable_list[0])
-        plt.ylabel(variable_list[1])
-        if i == 0:
-            plt.title('Crossing in-control & out-of-control points w.r.t (ALTR, PTCH)')
-        else:
-            plt.title('Crossing out-of-control points w.r.t (ALTR, PTCH)')
-        plt.legend()
-        plt.show()
+        # # 绘制ALTR和PTCH的散点图及DBSCAN聚类椭圆形式图
+        # for i in range(2):
+        #     plt.figure()
+        #     if i == 0:
+        #         plt.scatter(X[cross_IC_idx_list, 0], X[cross_IC_idx_list, 1], c='green', s = 10, label='Crossing IC')
+        #     plt.scatter(X[cross_OOC_idx_list, 0], X[cross_OOC_idx_list, 1], c='orange', s = 10, label='Crossing OOC')
+        #     plt.scatter(X[wshr_class_idx[0], 0], X[wshr_class_idx[0], 1], c='red', s = 10, label='WSHR = 0')
+        #     for i in range(len(np.unique(db_labels))):
+        #         covariances = np.cov(X_cross[db_labels == i].T)
+        #         eigenvalues, eigenvectors = np.linalg.eigh(covariances)
+        #         angle = np.degrees(np.arctan2(eigenvectors[1, 0], eigenvectors[0, 0]))
+        #         width, height = 3 * np.sqrt(eigenvalues)
+        #         ell = Ellipse(xy=np.mean(X_cross[db_labels == i], axis=0), width=width, height=height, angle=angle, edgecolor='blue', lw=2, facecolor='none')
+        #         plt.gca().add_patch(ell)
+        #     plt.xlabel(variable_list[0])
+        #     plt.ylabel(variable_list[1])
+        #     if i == 0:
+        #         plt.title('Crossing in-control & out-of-control points w.r.t (ALTR, PTCH)')
+        #     else:
+        #         plt.title('Crossing out-of-control points w.r.t (ALTR, PTCH)')
+        #     plt.legend()
+        #     plt.show()
 
-    # 绘制三维散点图
-    fig = plt.figure(figsize=(5, 5))
-    ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(X[wshr_class_idx[1], 0], X[wshr_class_idx[1], 1], X[wshr_class_idx[1], 2], c='green', s = 10, label='WSHR = 1')
-    ax.scatter(X[cross_IC_idx_list, 0], X[cross_IC_idx_list, 1], X[cross_IC_idx_list, 2], c='green', s = 10, label='Crossing IC')
-    ax.scatter(X[cross_OOC_idx_list, 0], X[cross_OOC_idx_list, 1], X[cross_OOC_idx_list, 2], c='orange', s = 10, label = 'Crossing OOC')
-    # ax.scatter(X[ALTR_OOC_idx_list, 0], X[ALTR_OOC_idx_list, 1], X[ALTR_OOC_idx_list, 2], c='pink', s = 10, label='ALTR out of control')
-    # ax.scatter(X[PTCH_OOC_idx_list, 0], X[PTCH_OOC_idx_list, 1], X[PTCH_OOC_idx_list, 2], c='blue', s = 10, label='PTCH out of control')
-    ax.scatter(X[wshr_class_idx[0], 0], X[wshr_class_idx[0], 1], X[wshr_class_idx[0], 2], c='red', s = 10, label='WSHR = 0')
-    ax.set_xlabel(variable_list[0])
-    ax.set_ylabel(variable_list[1])
-    ax.set_zlabel(variable_list[2])
-    ax.legend()
-    plt.tight_layout()
-    plt.show()
+        # # 绘制三维散点图
+        # fig = plt.figure(figsize=(5, 5))
+        # ax = fig.add_subplot(111, projection='3d')
+        # # ax.scatter(X[wshr_class_idx[1], 0], X[wshr_class_idx[1], 1], X[wshr_class_idx[1], 2], c='green', s = 10, label='WSHR = 1')
+        # ax.scatter(X[cross_IC_idx_list, 0], X[cross_IC_idx_list, 1], X[cross_IC_idx_list, 2], c='green', s = 10, label='Crossing IC')
+        # ax.scatter(X[cross_OOC_idx_list, 0], X[cross_OOC_idx_list, 1], X[cross_OOC_idx_list, 2], c='orange', s = 10, label = 'Crossing OOC')
+        # # ax.scatter(X[ALTR_OOC_idx_list, 0], X[ALTR_OOC_idx_list, 1], X[ALTR_OOC_idx_list, 2], c='pink', s = 10, label='ALTR out of control')
+        # # ax.scatter(X[PTCH_OOC_idx_list, 0], X[PTCH_OOC_idx_list, 1], X[PTCH_OOC_idx_list, 2], c='blue', s = 10, label='PTCH out of control')
+        # ax.scatter(X[wshr_class_idx[0], 0], X[wshr_class_idx[0], 1], X[wshr_class_idx[0], 2], c='red', s = 10, label='WSHR = 0')
+        # ax.set_xlabel(variable_list[0])
+        # ax.set_ylabel(variable_list[1])
+        # ax.set_zlabel(variable_list[2])
+        # ax.legend()
+        # plt.tight_layout()
+        # plt.show()
+    else:
+        cross_OOC_idx_list = []
 
     return cross_OOC_idx_list
-
-def test():
-    print('hello world')
 
 # crossValidate(download_folder_paths[0], os.listdir(download_folder_paths[0])[6], variable_list=['ALTR', 'PTCH', "ALT"])
