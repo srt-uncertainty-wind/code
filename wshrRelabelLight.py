@@ -124,7 +124,7 @@ def ALTRmetrics(folder_name, mat_name, normalized=False):
     '''
     ALT_diff_extend = [0 if i-60 < 0 else ALT_diff[i-60] for i in range(len(X[:, 1]))]
     # ALT_diff_extend = [0 if i-1 < 0 else ALT_diff[i-1]*60 for i in range(len(X[:, 1]))]
-    ALTR_residual = np.array(ALT_diff_extend) - X[:, 1]
+    # ALTR_residual = np.array(ALT_diff_extend) - X[:, 1]
 
     # 计算ALTR相较于分钟滑动ALT的残差
     # ALT_stable_time = np.where(np.abs(ALT_diff) <= 30)[0]
@@ -137,7 +137,7 @@ def ALTRmetrics(folder_name, mat_name, normalized=False):
     ALTR_OOC_idx_list = np.where(np.array(ALTR_overlimit) != None)[0]
     # print(f"Altitute varying rate out of control at time: {ALTR_OOC_idx_list}")
 
-    return ALTR_OOC_idx_list
+    return ALT_diff_extend, ALTR_residual, ALTR_OOC_idx_list
 
 def PTCHmetrics(folder_name, mat_name, normalized=False):
     # 构建数据集
@@ -153,7 +153,7 @@ def PTCHmetrics(folder_name, mat_name, normalized=False):
 
 def crossValidate(folder_name, mat_name, variable_list, normalized=False):
     # 构建数据集
-    ALTR_OOC_idx_list = ALTRmetrics(folder_name, mat_name)
+    _, _, ALTR_OOC_idx_list = ALTRmetrics(folder_name, mat_name)
     PTCH_OOC_idx_list = PTCHmetrics(folder_name, mat_name)
     X, Y = dataConstruct(folder_name, mat_name, variable_list, normalized)
     wshr_class_idx = [np.where(Y == 0)[0], np.where(Y == 1)[0]]
