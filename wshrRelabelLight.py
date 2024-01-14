@@ -107,7 +107,7 @@ def dataConstruct(work_folder_path, work_mat_name, variable_list, normalized = F
     # print(f"Wind Shear Warns at time {wshr_class_idx[0]}")
     return X, Y
 
-def ALTRmetrics(folder_name, mat_name, normalized=False):
+def ALTRmetrics_old(folder_name, mat_name, normalized=False):
     # 构建数据集
     variable_list = ['ALT', 'ALTR', 'PT']
     X, Y = dataConstruct(folder_name, mat_name, variable_list)
@@ -138,6 +138,24 @@ def ALTRmetrics(folder_name, mat_name, normalized=False):
     # print(f"Altitute varying rate out of control at time: {ALTR_OOC_idx_list}")
 
     return ALT_diff_extend, ALTR_residual, ALTR_OOC_idx_list
+
+def ALTRmetrics(folder_name, mat_name, normalized=False):
+    # 构建数据集
+    variable_list = ['ALT', 'ALTR', 'IVV']
+    X, Y = dataConstruct(folder_name, mat_name, variable_list)
+
+    # 计算和可视化IVV的差：垂向加速度，用于反映垂直方向的受力情况，排除重力后应当能反映升力情况
+    g = -9.8 # 规定重力加速度
+    vertical_acceleration = X[1:, 2] - X[:-1, 2]
+    vertical_acceleration = np.insert(vertical_acceleration, 0, g)
+    vertical_acceleration = vertical_acceleration - g
+
+    # 生成监控序列
+    ALTR_overlimit = [X[i, 2] if abs(X[i, 2])>500 and vertical_acceleration[i]>3*np.std(vertical_acceleration) else None for i in range(len(X[:, 2]))]
+    ALTR_IC_idx_list = np.where(np.array(ALTR_overlimit) == None)[0]
+    ALTR_OOC_idx_list = np.where(np.array(ALTR_overlimit) != None)[0]
+
+    return X[:, 2], vertical_acceleration, ALTR_OOC_idx_list
 
 def PTCHmetrics(folder_name, mat_name, normalized=False):
     # 构建数据集
